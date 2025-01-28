@@ -1,4 +1,4 @@
-# IGVF Mouse snRNA-seq Analysis
+# IGVF Mouse Founder snRNA-seq Analysis
 
 Description of dataset
 
