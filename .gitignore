@@ -1,0 +1,4 @@
+.ipynb_checkpoints/
+*.err
+*.out
+*.h5ad
