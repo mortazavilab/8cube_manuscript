@@ -1,1 +1,0 @@
-/share/crsp/lab/seyedam/share/igvf_pipeline/figures/run_pbulk_pydeseq2.sh

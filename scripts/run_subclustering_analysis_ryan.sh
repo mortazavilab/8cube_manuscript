@@ -1,1 +1,0 @@
-/share/crsp/lab/seyedam/share/igvf_pipeline/figures/run_subclustering_analysis_ryan.sh
