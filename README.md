@@ -9,4 +9,8 @@ Description of dataset
 ## [Figure 2](https://github.com/erebboah/8cube_paper/blob/main/fig2/Fig2_8cube_01-29-25.pdf)
 [Python Jupyter notebook for panels a-f](https://github.com/erebboah/8cube_paper/blob/main/notebooks/Fig2.ipynb)
 
+## Figure 3
+
+## Figure 4
+
 ## Figure 5
