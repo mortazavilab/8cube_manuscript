@@ -11,4 +11,5 @@
 
 ## Figure 4
 
-## Figure 5
+## [Figure 5](https://github.com/erebboah/8cube_paper/blob/main/fig5/Fig5_8cube_02-03-25.pdf)
+[Python Jupyter notebook for panels a-g](https://github.com/erebboah/8cube_paper/blob/main/notebooks/Fig5.ipynb)
