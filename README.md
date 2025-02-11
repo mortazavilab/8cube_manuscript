@@ -10,7 +10,8 @@
 ## [Figure 3](https://github.com/erebboah/8cube_paper/blob/main/fig3/Fig3_8cube_02-08-25.pdf)
 [Python Jupyter notebook for panels a-d](https://github.com/erebboah/8cube_paper/blob/main/notebooks/Fig3.ipynb)
 
-## Figure 4
+## [Figure 4](https://github.com/erebboah/8cube_paper/blob/main/fig3/Fig4_8cube_02-07-25.pdf)
+[Python Jupyter notebook for panels a-f](https://github.com/erebboah/8cube_paper/blob/main/notebooks/Fig4.ipynb)
 
 ## [Figure 5](https://github.com/erebboah/8cube_paper/blob/main/fig5/Fig5_8cube_02-03-25.pdf)
 [Python Jupyter notebook for panels a-g](https://github.com/erebboah/8cube_paper/blob/main/notebooks/Fig5.ipynb)
