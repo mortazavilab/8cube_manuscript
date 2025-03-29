@@ -173,7 +173,6 @@ def extract_main_tissue(obs, plate):
 def extract_mult_tissue(obs, plate):
     return obs[(obs['plate'] == plate) & (obs['well_type'] == 'Multiplexed')]['Tissue'].iloc[0]
 
-
 def load_combined_obs(sample_df):
     tissues = sample_df['Tissue'].unique().tolist()
     all_obs = []
@@ -242,8 +241,8 @@ def create_barcode_sample_map(plate, kit, chemistry):
 
     acc_map = acc_map.rename(columns={'accession': 'sample accession', 
                                       'tissue': 'sample description'})
-    acc_map['position'] = 17
-    acc_map = acc_map[['barcode', 'sample accession', 'sample description', 'position', 'parse barcode type', 'well']]
+    acc_map['position0'] = 16
+    acc_map = acc_map[['barcode', 'sample accession', 'sample description', 'position0', 'parse barcode type', 'well']]
     acc_map.to_csv(f'{plate}/{plate}_barcode_sample_map.csv', index = False)
     #acc_map['sample accession'] = acc_map['sample accession'].str.replace(',', '\n')
     return acc_map

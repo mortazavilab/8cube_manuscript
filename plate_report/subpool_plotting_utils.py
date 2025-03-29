@@ -230,6 +230,12 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
         plot_category = "plate"
     else:
         plot_category = "Tissue"
+        
+    rotate_labels = False
+    if "plate" in obs.columns and obs['plate'].nunique() == 1:
+        plate_value = obs['plate'].unique()[0]
+        if plate_value in {"igvf_007", "igvf_008", "igvf_008b"}:
+            rotate_labels = True
 
     # --- Plot 1: Number of genes and total counts ---
     data_ngb = pd.melt(obs, id_vars=[plot_category], 
@@ -248,19 +254,26 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
         'total_counts_cb': 'CellBender'
     })
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
+    if rotate_labels:
+        fig, axes = plt.subplots(1, 2, figsize=(8, 4.5), sharey=False)
+    else:
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
     sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_ngb, split=True, ax=axes[0])
     axes[0].set_title('Number of Expressed Genes', fontsize=size)
     axes[0].set_ylabel('# genes', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
     axes[0].tick_params(axis='both', which='major', labelsize=size)
+    if rotate_labels:
+        axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
     sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_tbc, split=True, ax=axes[1])
     axes[1].set_title('Total Counts', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
     axes[1].set_ylabel('# Counts', fontsize=size)
     axes[1].tick_params(axis='both', which='major', labelsize=size)
+    if rotate_labels:
+        axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=90)
 
     plt.tight_layout()
     fname1 = f"{output_prefix}1.png"
@@ -281,19 +294,26 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
                       var_name='Count type', value_name='Score')
     data_ds['Count type'] = 'Raw'
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
+    if rotate_labels:
+        fig, axes = plt.subplots(1, 2, figsize=(8, 4.5), sharey=False)
+    else:
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
     sns.violinplot(x=plot_category, y='Percent', hue='Count type', data=data_pmt, split=True, ax=axes[0])
     axes[0].set_title('% Mitochondrial Expression', fontsize=size)
     axes[0].set_ylabel('Percent', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
     axes[0].tick_params(axis='both', which='major', labelsize=size)
+    if rotate_labels:
+        axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
     sns.violinplot(x=plot_category, y='Score', hue='Count type', data=data_ds, ax=axes[1])
     axes[1].set_title('Scrublet Doublet Score', fontsize=size)
     axes[1].set_ylabel('Score', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
     axes[1].tick_params(axis='both', which='major', labelsize=size)
+    if rotate_labels:
+        axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=90)
 
     plt.tight_layout()
     fname2 = f"{output_prefix}2.png"

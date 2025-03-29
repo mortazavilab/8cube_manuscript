@@ -76,14 +76,16 @@ def add_pagebreak(elements):
     elements.append(PageBreak())
 
 def build_pdf_report(
-    this_plate,config, kit, chemistry, sample_df, subpools, color_by, plate_map,
+    this_plate, config, kit, chemistry, sample_df, subpools, color_by, plate_map,
     align_df, formatted_counts, qc_200umi, qc_500umi, knee_plot_path,
     hmap_paths, cb_settings, cb_results, cb_knee_path,
     violin1, violin2, violin1_filt, violin2_filt,
     stacked_main, stacked_mult, barcode_df,
-    adata_obs, adata_obs_filt,combined_obs,
+    adata_obs, adata_obs_filt, combined_obs,
     main_tissue, mult_tissue, 
-    this_sampletype, qc_min_counts, qc_min_genes, qc_max_counts, qc_pct_counts_mt, qc_doublet_score
+    this_sampletype, qc_min_counts, qc_min_genes, qc_max_counts, qc_pct_counts_mt, qc_doublet_score,
+    stacked_mult2=None, mult_tissue2=None, main_tissue2=None, stacked_main2=None,  # <- new optional params
+    
 ):
     elements = []
     
@@ -134,7 +136,14 @@ def build_pdf_report(
     if 'well_type' in sample_df.columns and any(sample_df['well_type'] == 'Multiplexed'):
         add_section_header(elements, f"{section_num}. Sample multiplexing")
         section_num += 1
-        add_paragraph(elements, f"{main_tissue} was the main tisue on the plate while {mult_tissue} was multiplexed.")
+        
+        if this_plate == 'igvf_007':
+            add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} and {mult_tissue2} were multiplexed.")
+        elif this_plate in ['igvf_008', 'igvf_008b']:
+            add_paragraph(elements, f"{main_tissue} and {main_tissue2} were the main tissues on the plate while {mult_tissue} was multiplexed.")
+        else:
+            add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} was multiplexed.")
+
 
         multiplexed_df = pd.read_csv('plots/multiplexed_genotype_key.csv')
         add_table(elements, multiplexed_df, title=f"Table {table_num}: Genotype multiplexing key")
@@ -172,13 +181,19 @@ def build_pdf_report(
     add_table(elements, cb_results, title= f"Table {table_num}: Cellbender stats")
     table_num += 1
     add_image(elements, cb_knee_path, width = 425, height = 225)
-    add_image(elements, violin1, width = 380, height = 150)
-    add_image(elements, violin2, width = 380, height = 150)
+    
+    if this_plate in ['igvf_007', 'igvf_008', 'igvf_008b']:
+        add_image(elements, violin1, width = 380, height = 220)
+        add_image(elements, violin2, width = 380, height = 220)
+    else:
+        add_image(elements, violin1, width = 380, height = 150)
+        add_image(elements, violin2, width = 380, height = 150)
+
     
     ### SECTION 4: Barcode sample map
     add_section_header(elements, f"{section_num}. Barcode sample map")
     section_num += 1
-    add_paragraph(elements, f"The first round corresponds to sample barcoding. In Parse Bio assays, two barcodes are included in the first round: a random hexamer (R) and oligo-dT (T) barcode per well*. This reduces 3-prime bias and allows for the capture of full-length transcripts. These barcodes can be found in the barcode-1 region in the seqspec. For the {kit} kit, samples are distributed across {len(barcode_df['barcode'][barcode_df['parse barcode type'] == 'T'].unique().tolist())} wells in round 1. The following table includes our lab sample ID and IGVF sample accessions.")
+    add_paragraph(elements, f"The first round corresponds to sample barcoding. In Parse Bio assays, two barcodes are included in the first round: a random hexamer (R) and oligo-dT (T) barcode per well (parse barcode type). This reduces 3-prime bias and allows for the capture of full-length transcripts. These sample level barcodes can be found in the barcode-1 region in the seqspec, and begin at position 16 (0-based) in the full 24-nt cell barcode. For the {kit} kit, samples are distributed across {len(barcode_df['barcode'][barcode_df['parse barcode type'] == 'T'].unique().tolist())} wells in round 1. The following table includes our lab sample ID as sample descriptions and IGVF sample accessions.")
     add_table(elements, barcode_df, title= f"Table {table_num}: Barcode sample map")
     table_num += 1
     add_pagebreak(elements)
@@ -206,13 +221,36 @@ def build_pdf_report(
     })
     add_table(elements, qc_thresholds, title=f"Table {table_num}: QC thresholds")
     table_num += 1
-    add_image(elements, violin1_filt, width = 380, height = 150)
-    add_image(elements, violin2_filt, width = 380, height = 150)
+    if this_plate in ['igvf_007', 'igvf_008', 'igvf_008b']:
+        add_image(elements, violin1_filt, width = 380, height = 220)
+        add_image(elements, violin2_filt, width = 380, height = 220)
+    else:
+        add_image(elements, violin1_filt, width = 380, height = 150)
+        add_image(elements, violin2_filt, width = 380, height = 150)
+        
     n_clust_main_tissue = combined_obs['leiden'][combined_obs['Tissue'] == main_tissue].astype(int).max() + 1
     n_clust_mult_tissue = combined_obs['leiden'][combined_obs['Tissue'] == mult_tissue].astype(int).max() + 1
-    add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue} and {n_clust_mult_tissue} clusters in {mult_tissue}, using all tissue data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
-    add_image(elements, stacked_main, width = 450, height = 230)
-    add_image(elements, stacked_mult, width = 450, height = 230)
+    
+    
+    if this_plate == 'igvf_007':
+        n_clust_mult_tissue2 = combined_obs['leiden'][combined_obs['Tissue'] == mult_tissue2].astype(int).max() + 1
+        
+        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue}, {n_clust_mult_tissue} clusters in {mult_tissue}, and {n_clust_mult_tissue2} clusters in {mult_tissue2} using all tissue data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
+        add_image(elements, stacked_main, width = 450, height = 230)
+        add_image(elements, stacked_mult, width = 450, height = 230)
+        add_image(elements, stacked_mult2, width=450, height=230)
+    elif this_plate in ['igvf_008', 'igvf_008b']:
+        n_clust_main_tissue2 = combined_obs['leiden'][combined_obs['Tissue'] == main_tissue2].astype(int).max() + 1
+        
+        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue}, {n_clust_main_tissue2} total clusters in {main_tissue2}, and {n_clust_mult_tissue} clusters in {mult_tissue}, using all tissue data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
+        add_image(elements, stacked_main, width = 450, height = 230)
+        add_image(elements, stacked_main2, width = 450, height = 230)
+        add_image(elements, stacked_mult, width = 450, height = 230)
+    else:
+        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue} and {n_clust_mult_tissue} clusters in {mult_tissue}, using all tissue data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
+        add_image(elements, stacked_main, width = 450, height = 230)
+        add_image(elements, stacked_mult, width = 450, height = 230)
+
     obs_desc = pd.read_csv("obs_keys_description.csv")
     add_table(elements, obs_desc, title=f"Table {table_num}: Description of obs keys in h5ad file")
     table_num += 1
