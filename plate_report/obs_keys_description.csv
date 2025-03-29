@@ -1,0 +1,66 @@
+Key,Description
+cellID,"Index of obs table. Includes barcoding wells for each round (1_2_3), subpool, and experiment."
+lab_sample_id,Human-readable sample name used in-house.
+sample,IGVF tissue accession.
+plate,"Experiment ID, e.g. igvf_003."
+subpool,"Subpool ID, e.g. Subpool_2. Number corresponds to Illumina index ID from Parse Bio kit."
+SampleType,Nuclei or Cells.
+Tissue,"Human-readable tissue name, e.g. Kidney."
+Sex,Male or Female.
+Age,"Age in postnatal months (PNM) of the mouse, e.g. PNM_02."
+Genotype,"Mouse genotype/strain, e.g. B6J."
+leiden,Numeric Leiden cluster starting from 0.
+leiden_R,"If necessary, Leiden clusters and any sub-clusters, e.g. 15_1."
+subpool_type,Exome capture (EX) or no exome capture (NO).
+general_celltype,"Broadest level of cell type annotations, e.g. neuron."
+general_CL_ID,"EMBL CL database ID for general cell type annotation, e.g. CL:0000540."
+celltype,"Finest level of cell type annotation with a CL ID, e.g. Vip+ GABAergic cortical interneuron."
+CL_ID,"EMBL CL database ID for cell type annotation, CL:4023016"
+subtype,Finest level of cell type annotation that may not have a CL ID. Mostly matches celltype.
+Protocol,"Cell barcoding and library building protocol/kit, e.g. Parse_WT."
+Chemistry,"Protocol chemistry version, v2 or v3."
+bc,"24-nucleotide sequence corresponding to 3 8-nucleotide barcode rounds (3, 2, 1)."
+bc1_sequence,8-nucleotide sequence barcode for round 1.
+bc2_sequence,8-nucleotide sequence barcode for round 2.
+bc3_sequence,8-nucleotide sequence barcode for round 3.
+bc1_well,Round 1 well.
+bc2_well,Round 2 well.
+bc3_well,Round 2 well.
+Row,Sample barcoding plate (round 1) row.
+Column,Sample barcoding plate (round 1) column.
+well_type,Single or Multiplexed.
+Mouse_Tissue_ID,Same as lab_sample_id.
+Multiplexed_sample1,Sample 1 from multiplexed well (if applicable)
+Multiplexed_sample2,Sample 2 from multiplexed well (if applicable)
+DOB,Date of birth of the mouse in month/day/year format.
+Age_days,Age of the mouse in days.
+Body_weight_g,Body weight in grams of the mouse.
+Estrus_cycle,"Estimated estrus stage of the mouse, if applicable."
+Dissection_date,Date the tissue was harvested in month/day/year format.
+Dissection_time,Time in hours:minutes (24-hour time) the mouse was sacrificed.
+ZT,"Number of hours into the light cycle, from lights on (06:30, ZT0) to lights off (20:30, ZT14)."
+Dissector,Initials of technician who dissected the tissue.
+Tissue_weight_mg,Tissue weight in milligrams.
+Notes,"Notes taken during sample collection, experiment, or data processing."
+n_genes_by_counts_raw,"The number of genes with at least 1 count, calculated using raw counts."
+total_counts_raw,"Total counts (UMIs), calculated using raw counts."
+total_counts_mt_raw,"Total counts for mitochondrial genes, calculated using raw counts."
+pct_counts_mt_raw,"Percent of total counts in mitochondrial genes, calculated using raw counts."
+n_genes_by_counts_cb,"The number of genes with at least 1 count, calculated using CellBender counts."
+total_counts_cb,"Total counts (UMIs), calculated using CellBender counts."
+total_counts_mt_cb,"Total counts for mitochondrial genes, calculated using CellBender counts."
+pct_counts_mt_cb,"Percent of total counts in mitochondrial genes, calculated using CellBender counts."
+doublet_score,"Scrublet doublet score, calculated using CellBender counts."
+predicted_doublet,Scrublet predicted doublet (True or False).
+background_fraction,Fraction of counts CellBender predicted to be background noise.
+cell_probability,CellBender probability that the cell is real.
+cell_size,CellBender size factor.
+droplet_efficiency,CellBender statistic indicating transcript capture efficiency per cell.
+B6J_klue_counts,Estimated counts for B6J genotype from klue analysis.
+NODJ_klue_counts,Estimated counts for NODJ genotype from klue analysis.
+AJ_klue_counts,Estimated counts for AJ genotype from klue analysis.
+PWKJ_klue_counts,Estimated counts for PWKJ genotype from klue analysis.
+129S1J_klue_counts,Estimated counts for 129S1J genotype from klue analysis.
+CASTJ_klue_counts,Estimated counts for CASTJ genotype from klue analysis.
+WSBJ_klue_counts,Estimated counts for WSBJ genotype from klue analysis.
+NZOJ_klue_counts,Estimated counts for NZOJ genotype from klue analysis.
