@@ -63,7 +63,7 @@ def add_layout(elements, left_table, right_image_path, width, height):
     image.drawWidth = width
     image.drawHeight = height
     image.hAlign = 'LEFT'
-    layout = Table([[left_table, image]], colWidths=[240, 300])
+    layout = Table([[left_table, image]], colWidths=[245, 300])
     layout.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
