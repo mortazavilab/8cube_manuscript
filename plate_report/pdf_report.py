@@ -58,10 +58,10 @@ def add_paragraph(elements, text, style_name='BodyText', font_size=12, space_aft
     elements.append(Paragraph(text, style))
     elements.append(Spacer(1, 5))
 
-def add_layout(elements, left_table, right_image_path):
+def add_layout(elements, left_table, right_image_path, width, height):
     image = Image(right_image_path)
-    image.drawWidth = 292.5
-    image.drawHeight = 225
+    image.drawWidth = width
+    image.drawHeight = height
     image.hAlign = 'LEFT'
     layout = Table([[left_table, image]], colWidths=[240, 300])
     layout.setStyle(TableStyle([
@@ -113,8 +113,18 @@ def build_pdf_report(
     ('ALIGN', (0, 1), (0, -1), 'LEFT'),
     ('FONTNAME', (1, 1), (-1, -1), 'Helvetica')
     ]))
+    
+    mult_table = pd.read_csv('plots/multiplexed_genotype_key.csv')
 
-    add_layout(elements, table, plate_map)
+    if len(mult_table) <= 5:
+        platemap_width = 292
+        platemap_height = 215
+    else:
+        platemap_width = 292
+        platemap_height = 260
+
+    add_layout(elements, table, plate_map, platemap_width, platemap_height)
+
     elements.append(Spacer(1, 20))
     
     section_num = 1

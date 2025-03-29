@@ -1,5 +1,3 @@
-# parsing_utils.py
-
 import pandas as pd
 import numpy as np
 import re
@@ -18,10 +16,23 @@ def parse_sample_df(fname):
     return df
 
 
-def get_subpools(config_df):
+def get_subpools(config_df, plate):
     subpools = config_df['subpool'].unique().tolist()
-    regular_subpools = sorted([s for s in subpools if s != 'Subpool_EX'], key=lambda x: int(re.search(r'\d+', x).group()))
-    return regular_subpools + ['Subpool_EX']
+    regular_subpools = sorted(
+        [s for s in subpools if s != 'Subpool_EX'],
+        key=lambda x: int(re.search(r'\d+', x).group())
+    )
+
+    # Define sets of plates for conditions
+    add_ex_plates = {'igvf_003', 'igvf_004', 'igvf_005', 'igvf_007', 'igvf_008b', 'igvf_009', 'igvf_010', 'igvf_011', 'igvf_012'}
+    regular_only_plates = {'igvf_008', 'igvf_012', 'igvf_015'}
+
+    if plate in regular_only_plates:
+        return regular_subpools
+    elif plate in add_ex_plates:
+        return ['Subpool_EX'] + regular_subpools
+    else:
+        return regular_subpools
 
 
 def get_color_dict(df, color_by):
