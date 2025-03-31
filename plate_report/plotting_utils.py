@@ -26,8 +26,8 @@ def plot_plate_map(df, color_by, color_dict, output_path="plots/plate_map_plot.p
             .reset_index(drop=True)
         )
 
-        # Map to letters A, B, C...
-        pair_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")[:len(multiplexed_pairs)]
+        # Map to labels like multi-A, multi-B, ...
+        pair_labels = [f"multi-{chr(65+i)}" for i in range(len(multiplexed_pairs))]
         pair_map = {pair: label for pair, label in zip(multiplexed_pairs, pair_labels)}
 
         # Assign label to each row

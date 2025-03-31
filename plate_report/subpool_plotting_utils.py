@@ -27,7 +27,7 @@ def plot_plate_map(df, color_by, color_dict, output_path="plots/plate_map_plot.p
         )
 
         # Map to letters A, B, C...
-        pair_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")[:len(multiplexed_pairs)]
+        pair_labels = [f"multi-{chr(65+i)}" for i in range(len(multiplexed_pairs))]
         pair_map = {pair: label for pair, label in zip(multiplexed_pairs, pair_labels)}
 
         # Assign label to each row
@@ -225,7 +225,7 @@ def plot_stacked_mult(combined_obs, subpool, mult_tissue, output_path):
     )
 
 
-def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
+def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", size=14):
     if len(obs['Tissue'].unique()) > 5:
         plot_category = "plate"
     else:
@@ -236,7 +236,25 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
         plate_value = obs['plate'].unique()[0]
         if plate_value in {"igvf_007", "igvf_008", "igvf_008b"}:
             rotate_labels = True
+            
+    tissue_order_map = {
+    "igvf_003": ["CortexHippocampus", "Heart"],
+    "igvf_004": ["Heart", "Liver"],
+    "igvf_005": ["Liver", "DiencephalonPituitary"],
+    "igvf_007": ["DiencephalonPituitary", "Gonads"],
+    "igvf_008": ["Gonads", "Adrenal"],
+    "igvf_008b": ["Gonads", "Adrenal"],
+    "igvf_009": ["Adrenal", "Kidney"],
+    "igvf_010": ["Kidney", "Gastrocnemius"],
+    "igvf_011": ["Gastrocnemius", "CortexHippocampus"]
+    }
+    
+    if plot_category == "Tissue" and plate in tissue_order_map:
+        order = [t for t in tissue_order_map[plate] if t in obs['Tissue'].unique()]
+    else:
+        order = sorted(obs[plot_category].unique())
 
+    
     # --- Plot 1: Number of genes and total counts ---
     data_ngb = pd.melt(obs, id_vars=[plot_category], 
                        value_vars=['n_genes_by_counts_raw', 'n_genes_by_counts_cb'], 
@@ -259,7 +277,7 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
     else:
         fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
-    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_ngb, split=True, ax=axes[0])
+    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_ngb, split=True, ax=axes[0], order = order)
     axes[0].set_title('Number of Expressed Genes', fontsize=size)
     axes[0].set_ylabel('# genes', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
@@ -267,7 +285,7 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
     if rotate_labels:
         axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
-    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_tbc, split=True, ax=axes[1])
+    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_tbc, split=True, ax=axes[1], order = order)
     axes[1].set_title('Total Counts', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
     axes[1].set_ylabel('# Counts', fontsize=size)
@@ -299,7 +317,7 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
     else:
         fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
-    sns.violinplot(x=plot_category, y='Percent', hue='Count type', data=data_pmt, split=True, ax=axes[0])
+    sns.violinplot(x=plot_category, y='Percent', hue='Count type', data=data_pmt, split=True, ax=axes[0], order= order)
     axes[0].set_title('% Mitochondrial Expression', fontsize=size)
     axes[0].set_ylabel('Percent', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
@@ -307,7 +325,7 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
     if rotate_labels:
         axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
-    sns.violinplot(x=plot_category, y='Score', hue='Count type', data=data_ds, ax=axes[1])
+    sns.violinplot(x=plot_category, y='Score', hue='Count type', data=data_ds, ax=axes[1], order= order)
     axes[1].set_title('Scrublet Doublet Score', fontsize=size)
     axes[1].set_ylabel('Score', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
@@ -323,5 +341,5 @@ def plot_qc_violins(obs, output_prefix="plots/qc_violin_subpool_plot", size=14):
     return fname1, fname2
 
 
-def plot_qc_violins_filtered(obs_filt, output_prefix="plots/qc_violin_subpool_plot_filt", size=14):
-    return plot_qc_violins(obs_filt, output_prefix=output_prefix, size=size)
+def plot_qc_violins_filtered(obs_filt, plate, output_prefix="plots/qc_violin_subpool_plot_filt", size=14):
+    return plot_qc_violins(obs_filt, plate, output_prefix=output_prefix, size=size)

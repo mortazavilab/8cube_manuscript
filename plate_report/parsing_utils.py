@@ -53,7 +53,7 @@ def get_color_dict(df, color_by):
         )
 
         # Map to letters A, B, C...
-        pair_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")[:len(multiplexed_pairs)]
+        pair_labels = [f"multi-{chr(65+i)}" for i in range(len(multiplexed_pairs))]
         pair_map = {pair: label for pair, label in zip(multiplexed_pairs, pair_labels)}
 
         # Assign label to each row
@@ -74,14 +74,14 @@ def get_color_dict(df, color_by):
         'CASTJ': '#55AF5B', 
         'WSBJ': '#683C91', 
         'NZOJ': '#52A5DB', 
-        'A': '#1b9f78',
-        'B': '#da5f00', 
-        'C': '#766fb3', 
-        'D': '#e8298a', 
-        'E': '#b7916e',
-        'F': '#f7ef7a', 
-        'G': '#aecd56', 
-        'H': '#7aebda',
+        'multi-A': '#1b9f78',
+        'multi-B': '#da5f00', 
+        'multi-C': '#766fb3', 
+        'multi-D': '#e8298a', 
+        'multi-E': '#b7916e',
+        'multi-F': '#f7ef7a', 
+        'multi-G': '#aecd56', 
+        'multi-H': '#7aebda',
         'B6CASTF1J': '#7e9772',
         'B6PWKF1J': '#a5655f', 
         'B6WSBF1J': '#827298', 
@@ -154,6 +154,28 @@ def load_qc_stats(plate, subpools, sampletype):
         qc_200_list.append(_load_and_rename(file_path, 200))
         qc_500_list.append(_load_and_rename(file_path, 500))
     return pd.concat(qc_200_list, ignore_index=True), pd.concat(qc_500_list, ignore_index=True)
+
+
+def calc_qc_stats_main_tissue(obs, main_tissue, sampletype):
+    obs_main = obs[obs['Tissue'] == main_tissue]
+
+    def _get_qc_subset(obs_subset, umi_thresh):
+        obs_thresh = obs_subset[obs_subset['total_counts_raw'] >= umi_thresh]
+        return pd.DataFrame({
+            'Subpool': [main_tissue],
+            f'Number of {sampletype}': [obs_thresh.shape[0]],
+            'Median UMIs': [obs_thresh['total_counts_raw'].median()],
+            'Mean UMIs': [obs_thresh['total_counts_raw'].mean()],
+            'Median genes': [obs_thresh['n_genes_by_counts_raw'].median()],
+            'Mean genes': [obs_thresh['n_genes_by_counts_raw'].mean()]
+        })
+
+    qc_200 = _get_qc_subset(obs_main, 200)
+    qc_500 = _get_qc_subset(obs_main, 500)
+
+    return qc_200, qc_500
+
+    
 
 
 def filter_obs(obs, min_counts, max_counts, min_genes, pct_counts_mt, doublet_score):
@@ -241,8 +263,8 @@ def create_barcode_sample_map(plate, kit, chemistry):
 
     acc_map = acc_map.rename(columns={'accession': 'sample accession', 
                                       'tissue': 'sample description'})
-    acc_map['position0'] = 16
-    acc_map = acc_map[['barcode', 'sample accession', 'sample description', 'position0', 'parse barcode type', 'well']]
-    acc_map.to_csv(f'{plate}/{plate}_barcode_sample_map.csv', index = False)
+    acc_map['position'] = 16
+    acc_map = acc_map[['barcode', 'sample accession', 'sample description', 'position', 'parse barcode type', 'well']]
+    acc_map.to_csv(f'{plate}/{plate}_barcode_sample_map.tsv', sep = '\t', index = False)
     #acc_map['sample accession'] = acc_map['sample accession'].str.replace(',', '\n')
     return acc_map

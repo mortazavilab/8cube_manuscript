@@ -5,12 +5,12 @@ from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
 import pandas as pd
 
-def create_pdf_doc(plate, subpool):
-    pdf_filename = f"{plate}/{plate}_{subpool}_report.pdf"
+def create_pdf_doc(plate):
+    pdf_filename = f"{plate}/{plate}_report.pdf"
     return SimpleDocTemplate(
         pdf_filename,
         pagesize=letter,
-        title=f"{plate.upper()} {subpool} Pipeline Report"
+        title=f"{plate.upper()} Pipeline Report"
     )
 
 def add_title(elements, title):
@@ -45,6 +45,31 @@ def add_table(elements, df, title=None):
     elements.append(table)
     elements.append(Spacer(1, 10))
 
+    
+def add_transposed_table(elements, df, title=None):
+    if title:
+        add_subtitle(elements, title)
+    
+    # Transpose the DataFrame
+    df_t = df.set_index(df.columns[0]).T.reset_index()
+    df_t.columns.name = None  # Remove index name if it exists
+
+    # Format table data
+    data = [df_t.columns.tolist()] + df_t.values.tolist()
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(table)
+    elements.append(Spacer(1, 10))
+
+    
 def add_image(elements, img_path, width, height):
     img = Image(img_path)
     img.drawWidth = width
@@ -76,47 +101,36 @@ def add_pagebreak(elements):
     elements.append(PageBreak())
 
 def build_pdf_report(
-    this_plate,config, kit, chemistry, sample_df, subpool, color_by, plate_map,
+    this_plate, config, kit, chemistry, sample_df, subpools, color_by, plate_map,
     align_df, formatted_counts, qc_200umi, qc_500umi, knee_plot_path,
-    hmap_paths, 
-    cb_settings, cb_results, cb_knee_path,
+    hmap_paths, cb_settings, cb_results, cb_knee_path,
     violin1, violin2, violin1_filt, violin2_filt,
-    stacked_main, stacked_mult,
-    barcode_df,
-    adata_obs, adata_obs_filt,combined_obs,
+    stacked_main, stacked_mult, barcode_df,
+    adata_obs, adata_obs_filt, combined_obs,
     main_tissue, mult_tissue, 
-    this_sampletype, 
-    qc_min_counts, 
-    qc_min_genes, 
-    qc_max_counts, 
-    qc_pct_counts_mt, 
-    qc_doublet_score,
+    this_sampletype, qc_min_counts, qc_min_genes, qc_max_counts, qc_pct_counts_mt, qc_doublet_score,
     stacked_mult2=None, mult_tissue2=None, main_tissue2=None, stacked_main2=None,  # <- new optional params
+    
 ):
     elements = []
     
     ### SECTION 0: Title and overview
     add_title(elements, "UCI/Caltech IGVF Dataset Pipeline Report")
+    if this_plate in ['igvf_008', 'igvf_008b']:
+        tis = [main_tissue, main_tissue2]
+    else:
+        tis = main_tissue
 
-    plate_number = this_plate.replace('igvf_', '')
-    subpool_number = subpool.replace('Subpool_', '')
-
-    meas_set = pd.read_csv('/share/crsp/lab/seyedam/share/8cube_paper/plate_report/IGVF_8cube_measurement_set_tracking_with_exome.csv')
-    meas_set = meas_set[(meas_set['Experiment'] == plate_number) & (meas_set['Subpool'] == subpool_number)]
-    meas_set = meas_set['Accession'].unique()
-    meas_set = meas_set.item()
-    
     overview_data = [
         ["", this_plate],
         ["Kit", kit],
         ["Chemistry", f"Parse {chemistry}"],
         ["Sample type", this_sampletype],
         ["Genotypes", "\n".join([g for g in sample_df['Genotype'].unique() if "/" not in g])],
-        ["Tissues", "\n".join(sample_df['Tissue'].unique())],
-        ["Subpool", subpool],
-        ["Measurment Set", meas_set],
-        ["Exome capture subpool", "Yes" if "EX" in subpool else "No"],
-        [f"Expected {this_sampletype}", "13,000" if kit == "WT" or "EX" in subpool else "67,000"]
+        ["Tissue(s)", "\n".join(tis],
+        ["Subpools", len(subpools)],
+        ["Exome capture subpools", sum("EX" in s for s in subpools)],
+        [f"Expected {this_sampletype}", "100,000" if kit == "WT" else "1,000,000"]
     ]
     table = Table(overview_data)
     table.setStyle(TableStyle([
@@ -139,10 +153,10 @@ def build_pdf_report(
         platemap_height = 215
     else:
         platemap_width = 292
-        platemap_height = 240
+        platemap_height = 260
 
     add_layout(elements, table, plate_map, platemap_width, platemap_height)
-    
+
     elements.append(Spacer(1, 20))
     
     section_num = 1
@@ -160,7 +174,7 @@ def build_pdf_report(
         else:
             add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} was multiplexed.")
 
-            
+
         multiplexed_df = pd.read_csv('plots/multiplexed_genotype_key.csv')
         add_table(elements, multiplexed_df, title=f"Table {table_num}: Genotype multiplexing key")
         table_num += 1
@@ -178,7 +192,7 @@ def build_pdf_report(
     ### SECTION 2: Cell recovery
     add_section_header(elements, f"{section_num}. Cell recovery")
     section_num += 1
-    add_paragraph(elements, f"A total of {formatted_counts[0]} {this_sampletype} in {subpool} have >=200 UMIs and {formatted_counts[1]} {this_sampletype} have >= 500 UMIs.")
+    add_paragraph(elements, f"A total of {formatted_counts[0]} {this_sampletype} across all {len(subpools)} subpools have >=200 UMIs and {formatted_counts[1]} {this_sampletype} have >= 500 UMIs.")
     add_image(elements, knee_plot_path, width = 375, height = 225)
     add_table(elements, qc_200umi, title= f"Table {table_num}: QC stats for {this_sampletype} >=200 UMI")
     table_num += 1
@@ -217,7 +231,7 @@ def build_pdf_report(
     ### SECTION 5: Data processing workflow
     add_section_header(elements, f"{section_num}. Description of data processing workflow and h5ad files")
     section_num += 1
-    add_paragraph(elements, f"Data from {subpool} were combined with all other subpools into one AnnData object per tissue as well as matching data from other plates for processing and cell type annotation. The AnnData contains detailed sample and cell metadata in the observation (obs) table and gene information in the variables table (var). Cell IDs (adata.obs.index) are re-formatted to be human-readable and unique across subpools and experiments by appending subpool and experiment IDs. The final AnnData contains both raw and CellBender denoised counts matrices in separate layers: adata.layers['raw_counts'] and adata.layers['cellbender_counts']. The current adata.X points to the CellBender denoised counts. Cells or nuclei are filtered by >0.5 cell_probability from CellBender analysis.")
+    add_paragraph(elements, f"Data from all {len(subpools)} subpools were concatenated into one AnnData object per tissue and combined with matching data from other plates for processing and cell type annotation. The AnnData contains detailed sample and cell metadata in the observation (obs) table and gene information in the variables table (var). Cell IDs (adata.obs.index) are re-formatted to be human-readable and unique across subpools and experiments by appending subpool and experiment IDs. The final AnnData contains both raw and CellBender denoised counts matrices in separate layers: adata.layers['raw_counts'] and adata.layers['cellbender_counts']. The current adata.X points to the CellBender denoised counts. Cells or nuclei are filtered by >0.5 cell_probability from CellBender analysis.")
     add_paragraph(elements, f"In addition to CellBender filtering, {this_sampletype} were also filtered by the following QC parameters:")
     qc_thresholds = pd.DataFrame({
         "Parameter": [
@@ -302,7 +316,7 @@ def build_pdf_report(
     add_paragraph(elements, pipeline_text + pipeline_link)
 
     code_text = "Code used to make this report: "
-    code_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Subpool_report_{this_plate}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Subpool_report_{this_plate}.ipynb</a>'
+    code_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}.ipynb</a>'
     add_paragraph(elements, code_text + code_link)
 
     analysis_text = "Code used to process and annotate the data for main tissue: "

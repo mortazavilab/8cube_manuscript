@@ -45,6 +45,31 @@ def add_table(elements, df, title=None):
     elements.append(table)
     elements.append(Spacer(1, 10))
 
+    
+def add_transposed_table(elements, df, title=None):
+    if title:
+        add_subtitle(elements, title)
+    
+    # Transpose the DataFrame
+    df_t = df.set_index(df.columns[0]).T.reset_index()
+    df_t.columns.name = None  # Remove index name if it exists
+
+    # Format table data
+    data = [df_t.columns.tolist()] + df_t.values.tolist()
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(table)
+    elements.append(Spacer(1, 10))
+
+    
 def add_image(elements, img_path, width, height):
     img = Image(img_path)
     img.drawWidth = width

@@ -13,4 +13,5 @@ doublet_score = 0.25
 # ----- File Paths -----
 config_path = f'/dfs9/seyedam-lab/erebboah/parse_pipeline/configs/{plate}_config_with_exome.tsv'
 sample_metadata_path = '/dfs9/seyedam-lab/erebboah/parse_pipeline/configs/sample_metadata.csv'
+measurement_set_path = '/share/crsp/lab/seyedam/share/8cube_paper/plate_report/IGVF_8cube_measurement_set_tracking.csv'
 obs_path = f'{plate}/{plate}_adata_obs.csv'
