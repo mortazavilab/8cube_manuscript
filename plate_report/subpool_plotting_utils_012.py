@@ -234,7 +234,7 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     rotate_labels = False
     if "plate" in obs.columns and obs['plate'].nunique() == 1:
         plate_value = obs['plate'].unique()[0]
-        if plate_value in {"igvf_007", "igvf_008", "igvf_008b"}:
+        if plate_value in {"igvf_007", "igvf_008", "igvf_008b", "igvf_012"}:
             rotate_labels = True
             
     tissue_order_map = {

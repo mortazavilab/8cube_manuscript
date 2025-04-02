@@ -85,14 +85,13 @@ def build_pdf_report(
     barcode_df,
     adata_obs, adata_obs_filt,
     #combined_obs,
-    main_tissue, mult_tissue, 
+    #main_tissue, mult_tissue, 
     this_sampletype, 
     qc_min_counts, 
     qc_min_genes, 
     qc_max_counts, 
     qc_pct_counts_mt, 
-    qc_doublet_score,
-    stacked_mult2=None, mult_tissue2=None, main_tissue2=None, stacked_main2=None,  # <- new optional params
+    qc_doublet_score
 ):
     elements = []
     
@@ -135,12 +134,8 @@ def build_pdf_report(
     
     mult_table = pd.read_csv('plots/multiplexed_genotype_key.csv')
 
-    if len(mult_table) <= 5:
-        platemap_width = 292
-        platemap_height = 215
-    else:
-        platemap_width = 292
-        platemap_height = 240
+    platemap_width = 292
+    platemap_height = 170
 
     add_layout(elements, table, plate_map, platemap_width, platemap_height)
     
@@ -236,7 +231,8 @@ def build_pdf_report(
     #         qc_doublet_score
     #     ]
     # })
-    # add_table(elements, qc_thresholds, title=f"Table {table_num}: QC thresholds")
+    #add_table(elements, qc_thresholds, title=f"Table {table_num}: QC thresholds")
+    
     table_num += 1
     if this_plate in ['igvf_007', 'igvf_008', 'igvf_008b', 'igvf_012']:
         add_image(elements, violin1_filt, width = 380, height = 220)
@@ -306,13 +302,13 @@ def build_pdf_report(
     code_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Subpool_report_{this_plate}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Subpool_report_{this_plate}.ipynb</a>'
     add_paragraph(elements, code_text + code_link)
 
-#     analysis_text = "Code used to process and annotate the data for main tissue: "
-#     analysis_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb</a>'
-#     add_paragraph(elements, analysis_text + analysis_link)
+    # analysis_text = "Code used to process and annotate the data for main tissue: "
+    # analysis_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb</a>'
+    # add_paragraph(elements, analysis_text + analysis_link)
 
-#     analysis_text2 = "Code used to process and annotate the data for multiplexed tissue: "
-#     analysis_link2 = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb</a>'
-#     add_paragraph(elements, analysis_text2 + analysis_link2)
+    # analysis_text2 = "Code used to process and annotate the data for multiplexed tissue: "
+    # analysis_link2 = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb</a>'
+    # add_paragraph(elements, analysis_text2 + analysis_link2)
 
     
     return elements

@@ -105,7 +105,8 @@ def build_pdf_report(
     align_df, formatted_counts, qc_200umi, qc_500umi, knee_plot_path,
     hmap_paths, cb_settings, cb_results, cb_knee_path,
     violin1, violin2, violin1_filt, violin2_filt,
-    stacked_main, #stacked_mult,
+    #stacked_main, 
+    stacked_mult,
     barcode_df,
     adata_obs, adata_obs_filt, combined_obs,
     main_tissue, mult_tissue, 
@@ -116,6 +117,7 @@ def build_pdf_report(
     
 ):
     elements = []
+    genos = ['B6J', 'NODJ', 'AJ', 'PWKJ', '129S1J', 'CASTJ', 'WSBJ', 'NZOJ'] # hard code...i give up...
     
     ### SECTION 0: Title and overview
     add_title(elements, "UCI/Caltech IGVF Dataset Pipeline Report")
@@ -124,9 +126,9 @@ def build_pdf_report(
         ["Kit", kit],
         ["Chemistry", f"Parse {chemistry}"],
         ["Sample type", this_sampletype],
-        ["Genotypes", "\n".join([g for g in sample_df['Genotype'].unique() if "/" not in g])],
-        ["Tissue(s)", main_tissue],
-        ["Multiplexed", "No"],
+        ["Genotypes", "\n".join([g for g in genos])],
+        ["Tissue(s)", mult_tissue],
+        ["Multiplexed", "Yes"],
         ["Subpools", len(subpools)],
         ["Exome capture subpools", sum("EX" in s for s in subpools)]
     ]
@@ -159,19 +161,29 @@ def build_pdf_report(
     elements.append(Spacer(1, 20))
     
     section_num = 1
-    table_num = 1
-    
+    table_num = 1      
         
-    if this_plate == 'igvf_007':
-        add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} and {mult_tissue2} were multiplexed (see reports for {this_plate} attached to {mult_tissue} and {mult_tissue2} data for more information).")
-    elif this_plate in ['igvf_008', 'igvf_008b']:
-        add_paragraph(elements, f"{main_tissue} and {main_tissue2} were the main tissues on the plate while {mult_tissue} was multiplexed (see reports for {this_plate} attached to {main_tissue2} and {mult_tissue} data for more information).")
-    else:
-        add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} was multiplexed (see report for {this_plate} attached to {mult_tissue} data for more information).")
+    ### OPTIONAL SECTION: Multiplexing
+    if 'well_type' in sample_df.columns and any(sample_df['well_type'] == 'Multiplexed'):
+        add_section_header(elements, f"{section_num}. Sample multiplexing")
+        section_num += 1
+        
+        if this_plate == 'igvf_007':
+            add_paragraph(elements, f"{mult_tissue} and {mult_tissue2} were the multiplexed tissues on the plate with {main_tissue} as the main tissue (see report for {this_plate} attached to {main_tissue} data for more information).")
+        elif this_plate in ['igvf_008', 'igvf_008b']:
+            add_paragraph(elements, f"{mult_tissue} was the multiplexed tissue on the plate with {main_tissue} and {main_tissue2} as the main tissues (see report for {this_plate} attached to {main_tissue} and {main_tissue2} data for more information).")
+        else:
+            add_paragraph(elements, f"{mult_tissue} was the multiplexed tissue on the plate with {main_tissue} as the main tissue (see report for {this_plate} attached to {main_tissue} data for more information).")
+
+            
+        multiplexed_df = pd.read_csv('plots/multiplexed_genotype_key.csv')
+        add_table(elements, multiplexed_df, title=f"Table {table_num}: Genotype multiplexing key")
+        table_num += 1
+        elements.append(Spacer(1, 10))
 
 
     ### SECTION 1: Cell recovery in main tissue only
-    add_section_header(elements, f"{section_num}. Cell recovery in {main_tissue}")
+    add_section_header(elements, f"{section_num}. Cell recovery in {mult_tissue}")
     
     section_num += 1
     add_paragraph(elements, f"A total of {formatted_counts[0]} {this_sampletype} across all {len(subpools)} subpools have >=200 UMIs and {formatted_counts[1]} {this_sampletype} have >= 500 UMIs.")
@@ -220,7 +232,7 @@ def build_pdf_report(
     ### SECTION 5: Data processing workflow
     add_section_header(elements, f"{section_num}. Description of data processing workflow and h5ad files")
     section_num += 1
-    add_paragraph(elements, f"Data from all {len(subpools)} subpools were concatenated into one AnnData object and combined with {main_tissue} data from {plate_str} for processing and cell type annotation. The AnnData contains detailed sample and cell type metadata in the observation (obs) table and gene information in the variables table (var). Cell IDs (adata.obs.index) are re-formatted to be human-readable and unique across subpools and experiments by appending subpool and experiment IDs. The final AnnData contains both raw and CellBender denoised counts matrices in separate layers: adata.layers['raw_counts'] and adata.layers['cellbender_counts']. The current adata.X points to the CellBender denoised counts. Cells or nuclei are filtered by >0.5 cell_probability from CellBender analysis.")
+    add_paragraph(elements, f"Data from all {len(subpools)} subpools were concatenated into one AnnData object and combined with {mult_tissue} data from {plate_str} for processing and cell type annotation. The AnnData contains detailed sample and cell type metadata in the observation (obs) table and gene information in the variables table (var). Cell IDs (adata.obs.index) are re-formatted to be human-readable and unique across subpools and experiments by appending subpool and experiment IDs. The final AnnData contains both raw and CellBender denoised counts matrices in separate layers: adata.layers['raw_counts'] and adata.layers['cellbender_counts']. The current adata.X points to the CellBender denoised counts. Cells or nuclei are filtered by >0.5 cell_probability from CellBender analysis.")
     add_paragraph(elements, f"In addition to CellBender filtering, {this_sampletype} were also filtered by the following QC parameters:")
     qc_thresholds = pd.DataFrame({
         "Parameter": [
@@ -250,13 +262,13 @@ def build_pdf_report(
     if this_plate == 'igvf_007':
         n_clust_mult_tissue2 = combined_obs['leiden'][combined_obs['Tissue'] == mult_tissue2].astype(int).max() + 1
         
-        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue} using data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
-        add_image(elements, stacked_main, width = 450, height = 230)
+        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_mult_tissue} total clusters in {mult_tissue} using data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
+        add_image(elements, stacked_mult, width = 450, height = 230)
         #add_image(elements, stacked_mult, width = 450, height = 230)
         #add_image(elements, stacked_mult2, width=450, height=230)
     else:
-        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_main_tissue} total clusters in {main_tissue}, using data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
-        add_image(elements, stacked_main, width = 450, height = 230)
+        add_paragraph(elements, f"After filtering, data for each tissue was normalized and clustered using CellBender denoised counts. Normalization includes regression of technical parameters (number of genes expressed per cell and percent mitochondrial gene expression). Harmony was used to integrate exome capture and non-exome capture subpools for annotation. A Leiden clustering resolution of 1 was used for {n_clust_mult_tissue} total clusters in {mult_tissue}, using data across experiments. Cell type annotations were assigned per Leiden cluster or subcluster (leiden_R) using expression of canonical cell type marker genes.")
+        add_image(elements, stacked_mult, width = 450, height = 230)
         #add_image(elements, stacked_mult, width = 450, height = 230)
 
     obs_desc = pd.read_csv("obs_keys_description.csv")
@@ -294,11 +306,11 @@ def build_pdf_report(
     add_paragraph(elements, pipeline_text + pipeline_link)
 
     code_text = "Code used to make this report: "
-    code_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}_{main_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}_{main_tissue}.ipynb</a>'
+    code_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}_{mult_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/plate_report/Plate_report_{this_plate}_{mult_tissue}.ipynb</a>'
     add_paragraph(elements, code_text + code_link)
 
     analysis_text = f"Code used to process and annotate the data: "
-    analysis_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{main_tissue}.ipynb</a>'
+    analysis_link = f'<a href="https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb" color="blue">https://github.com/mortazavilab/8cube_manuscript/blob/main/annotation/{mult_tissue}.ipynb</a>'
     add_paragraph(elements, analysis_text + analysis_link)
 
     

@@ -26,7 +26,7 @@ def plot_plate_map(df, color_by, color_dict, output_path="plots/plate_map_plot.p
             .reset_index(drop=True)
         )
 
-        # Map to letters A, B, C...
+        # Map to labels like multi-A, multi-B, ...
         pair_labels = [f"multi-{chr(65+i)}" for i in range(len(multiplexed_pairs))]
         pair_map = {pair: label for pair, label in zip(multiplexed_pairs, pair_labels)}
 
@@ -117,13 +117,15 @@ def create_round_heatmap(obs, well_column, kit, sampletype):
     return output_path
 
 
-def plot_knee_raw_counts(plate, subpool, output_path="plots/raw_counts_single_subpool_knee_plot_plate.png"):
+def plot_knee_raw_counts(plate, subpools, output_path="plots/raw_counts_subpool_knee_plot_plate.png"):
     fig, ax = plt.subplots(figsize=(8, 6))
+    colors = sns.color_palette("husl", len(subpools))
 
-    file_path = f"/dfs9/seyedam-lab/erebboah/parse_pipeline/pipeline_report/{plate}/{subpool}/knee_plot_df.csv"
-    knee_df = pd.read_csv(file_path)
-    knee = knee_df['UMIs'].values
-    ax.loglog(range(len(knee)), knee, linewidth=2, label=subpool)
+    for i, subpool in enumerate(subpools):
+        file_path = f"/dfs9/seyedam-lab/erebboah/parse_pipeline/pipeline_report/{plate}/{subpool}/knee_plot_df.csv"
+        knee_df = pd.read_csv(file_path)
+        knee = knee_df['UMIs'].values
+        ax.loglog(range(len(knee)), knee, linewidth=2, color=colors[i], label=subpool)
 
     ax.set_ylabel("UMI Counts", fontsize=18)
     ax.set_xlabel("Barcodes", fontsize=18)
@@ -138,15 +140,16 @@ def plot_knee_raw_counts(plate, subpool, output_path="plots/raw_counts_single_su
     return output_path
 
 
-def plot_knee_cb(obs, category_column='subpool', output_path="plots/cb_knee_subpool_plot.png"):
-    subpool = obs[category_column].unique()[0]
-    
+def plot_knee_cb(obs, category_column='Tissue', output_path="plots/cb_knee_plot.png"):
+    unique_categories = natsorted(obs[category_column].unique())
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    knee_raw = np.sort(obs['total_counts_raw'].values)[::-1]
-    knee_cb = np.sort(obs['total_counts_cb'].values)[::-1]
-    ax.loglog(np.arange(len(knee_raw)), knee_raw, linewidth=3, label=f"{subpool} (raw)")
-    ax.loglog(np.arange(len(knee_cb)), knee_cb, linewidth=3, label=f"{subpool} (cellbender)")
+    for category in unique_categories:
+        subset = obs[obs[category_column] == category]
+        knee_raw = np.sort(subset['total_counts_raw'].values)[::-1]
+        knee_cb = np.sort(subset['total_counts_cb'].values)[::-1]
+        ax.loglog(np.arange(len(knee_raw)), knee_raw, linewidth=3, label=f"{category} (raw)")
+        ax.loglog(np.arange(len(knee_cb)), knee_cb, linewidth=3, label=f"{category} (cellbender)")
 
     ax.axhline(y=500, linewidth=2, color="#505050", linestyle='--', label='500 UMI')
     ax.axhline(y=200, linewidth=2, color="#A0A0A0", linestyle='--', label='200 UMI')
@@ -197,9 +200,8 @@ def plot_stacked_barplots(obs, cluster_key, var_key, output_path, color_dict=Non
     return output_path
 
 
-def plot_stacked_main(combined_obs, subpool, main_tissue, output_path):
+def plot_stacked_main(combined_obs, main_tissue, output_path):
     obs = combined_obs[combined_obs['Tissue'] == main_tissue]
-    obs = obs[obs['subpool'] == subpool]
     return plot_stacked_barplots(
         obs=obs,
         cluster_key="Genotype",
@@ -211,9 +213,8 @@ def plot_stacked_main(combined_obs, subpool, main_tissue, output_path):
     )
 
 
-def plot_stacked_mult(combined_obs, subpool, mult_tissue, output_path):
+def plot_stacked_mult(combined_obs, mult_tissue, output_path):
     obs = combined_obs[combined_obs['Tissue'] == mult_tissue]
-    obs = obs[obs['subpool'] == subpool]
     return plot_stacked_barplots(
         obs=obs,
         cluster_key="Genotype",
@@ -225,36 +226,16 @@ def plot_stacked_mult(combined_obs, subpool, mult_tissue, output_path):
     )
 
 
-def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", size=14):
+def plot_qc_violins(obs, output_prefix="plots/qc_violin_plot", size=14):
     if len(obs['Tissue'].unique()) > 5:
         plot_category = "plate"
     else:
         plot_category = "Tissue"
-        
+
     rotate_labels = False
     if "plate" in obs.columns and obs['plate'].nunique() == 1:
         plate_value = obs['plate'].unique()[0]
-        if plate_value in {"igvf_007", "igvf_008", "igvf_008b"}:
-            rotate_labels = True
-            
-    tissue_order_map = {
-    "igvf_003": ["CortexHippocampus", "Heart"],
-    "igvf_004": ["Heart", "Liver"],
-    "igvf_005": ["Liver", "DiencephalonPituitary"],
-    "igvf_007": ["DiencephalonPituitary", "GonadsMale", "GonadsFemale"],
-    "igvf_008": ["GonadsMale", "GonadsFemale", "Adrenal"],
-    "igvf_008b": ["GonadsMale", "GonadsFemale", "Adrenal"],
-    "igvf_009": ["Adrenal", "Kidney"],
-    "igvf_010": ["Kidney", "Gastrocnemius"],
-    "igvf_011": ["Gastrocnemius", "CortexHippocampus"]
-    }
-    
-    if plot_category == "Tissue" and plate in tissue_order_map:
-        order = [t for t in tissue_order_map[plate] if t in obs['Tissue'].unique()]
-    else:
-        order = sorted(obs[plot_category].unique())
 
-    
     # --- Plot 1: Number of genes and total counts ---
     data_ngb = pd.melt(obs, id_vars=[plot_category], 
                        value_vars=['n_genes_by_counts_raw', 'n_genes_by_counts_cb'], 
@@ -277,7 +258,7 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     else:
         fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
-    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_ngb, split=True, ax=axes[0], order = order)
+    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_ngb, split=True, ax=axes[0])
     axes[0].set_title('Number of Expressed Genes', fontsize=size)
     axes[0].set_ylabel('# genes', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
@@ -285,7 +266,7 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     if rotate_labels:
         axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
-    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_tbc, split=True, ax=axes[1], order = order)
+    sns.violinplot(x=plot_category, y='counts', hue='Count type', data=data_tbc, split=True, ax=axes[1])
     axes[1].set_title('Total Counts', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
     axes[1].set_ylabel('# Counts', fontsize=size)
@@ -317,7 +298,7 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     else:
         fig, axes = plt.subplots(1, 2, figsize=(8, 3), sharey=False)
 
-    sns.violinplot(x=plot_category, y='Percent', hue='Count type', data=data_pmt, split=True, ax=axes[0], order= order)
+    sns.violinplot(x=plot_category, y='Percent', hue='Count type', data=data_pmt, split=True, ax=axes[0])
     axes[0].set_title('% Mitochondrial Expression', fontsize=size)
     axes[0].set_ylabel('Percent', fontsize=size)
     axes[0].set_xlabel("", fontsize=size)
@@ -325,7 +306,7 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     if rotate_labels:
         axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90)
 
-    sns.violinplot(x=plot_category, y='Score', hue='Count type', data=data_ds, ax=axes[1], order= order)
+    sns.violinplot(x=plot_category, y='Score', hue='Count type', data=data_ds, ax=axes[1])
     axes[1].set_title('Scrublet Doublet Score', fontsize=size)
     axes[1].set_ylabel('Score', fontsize=size)
     axes[1].set_xlabel("", fontsize=size)
@@ -341,5 +322,5 @@ def plot_qc_violins(obs, plate, output_prefix="plots/qc_violin_subpool_plot", si
     return fname1, fname2
 
 
-def plot_qc_violins_filtered(obs_filt, plate, output_prefix="plots/qc_violin_subpool_plot_filt", size=14):
-    return plot_qc_violins(obs_filt, plate, output_prefix=output_prefix, size=size)
+def plot_qc_violins_filtered(obs_filt, output_prefix="plots/qc_violin_plot_filt", size=14):
+    return plot_qc_violins(obs_filt, output_prefix=output_prefix, size=size)

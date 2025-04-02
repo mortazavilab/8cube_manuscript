@@ -108,11 +108,15 @@ def build_pdf_report(
     stacked_main, #stacked_mult,
     barcode_df,
     adata_obs, adata_obs_filt, combined_obs,
-    main_tissue, mult_tissue, 
+    main_tissue,
+    main_tissue2,
+    main_tissue3,
+    main_tissue4,
+    main_tissue5,
+    #mult_tissue, 
     this_sampletype, qc_min_counts, qc_min_genes,
     qc_max_counts, qc_pct_counts_mt, qc_doublet_score,
     all_plates,
-    mult_tissue2=None, main_tissue2=None, stacked_main2=None,  
     
 ):
     elements = []
@@ -146,12 +150,8 @@ def build_pdf_report(
     
     mult_table = pd.read_csv('plots/multiplexed_genotype_key.csv')
 
-    if len(mult_table) <= 8:
-        platemap_width = 292
-        platemap_height = 200
-    else:
-        platemap_width = 292
-        platemap_height = 225
+    platemap_width = 292
+    platemap_height = 140
 
     
     add_layout(elements, table, plate_map, platemap_width, platemap_height)
@@ -161,15 +161,8 @@ def build_pdf_report(
     section_num = 1
     table_num = 1
     
-        
-    if this_plate == 'igvf_007':
-        add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} and {mult_tissue2} were multiplexed (see reports for {this_plate} attached to {mult_tissue} and {mult_tissue2} data for more information).")
-    elif this_plate in ['igvf_008', 'igvf_008b']:
-        add_paragraph(elements, f"{main_tissue} and {main_tissue2} were the main tissues on the plate while {mult_tissue} was multiplexed (see reports for {this_plate} attached to {main_tissue2} and {mult_tissue} data for more information).")
-    else:
-        add_paragraph(elements, f"{main_tissue} was the main tissue on the plate while {mult_tissue} was multiplexed (see report for {this_plate} attached to {mult_tissue} data for more information).")
-
-
+    add_paragraph(elements, f"Make-up samples from {main_tissue} were on the plate along with samples from {main_tissue2}, {main_tissue3}, {main_tissue4}, and {main_tissue5}. See reports for {this_plate} attached to other tissues for more information.")
+    
     ### SECTION 1: Cell recovery in main tissue only
     add_section_header(elements, f"{section_num}. Cell recovery in {main_tissue}")
     
@@ -244,7 +237,7 @@ def build_pdf_report(
     add_image(elements, violin2_filt, width = 380, height = 150)
         
     n_clust_main_tissue = combined_obs['leiden'][combined_obs['Tissue'] == main_tissue].astype(int).max() + 1
-    n_clust_mult_tissue = combined_obs['leiden'][combined_obs['Tissue'] == mult_tissue].astype(int).max() + 1
+    #n_clust_mult_tissue = combined_obs['leiden'][combined_obs['Tissue'] == mult_tissue].astype(int).max() + 1
     
     
     if this_plate == 'igvf_007':
